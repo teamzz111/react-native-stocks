@@ -1,105 +1,147 @@
-import React, {useMemo} from 'react';
-import {SafeAreaView} from 'react-native';
+import React from 'react';
+import {useAuth} from '../../hooks/useAuth';
 import {
-  Card,
-  Divider,
-  Layout,
-  TopNavigation,
+  FlatList,
+  ScrollView,
+  StyleSheet,
   Text,
-  List,
-} from '@ui-kitten/components/ui';
-import {getDashboardData} from '../../services/home.service';
-import {Investment} from '../../types/home.types';
-import {useNavigation} from '@react-navigation/native';
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-function HomeScreen() {
-  const [data, setData] = React.useState<Investment[]>([]);
-  const navigate = useNavigation();
+const mockProducts = [
+  {id: '1', name: 'Product 1', price: 29.99, category: 'Category 1'},
+  {id: '2', name: 'Product 2', price: 39.99, category: 'Category 2'},
+  {id: '3', name: 'Product 3', price: 19.99, category: 'Category 1'},
+];
 
-  React.useEffect(() => {
-    getDashboardData().then(res => {
-      setData(res);
-    });
-  }, []);
-
-  const {totalPortfolio, averageReturn} = useMemo(() => {
-    const total = data.reduce((sum, inv) => sum + inv.price, 0);
-
-    const avgReturn = (
-      data.reduce((sum, inv) => sum + inv.price, 0) / data.length
-    ).toFixed(2);
-
-    return {
-      totalPortfolio: total,
-      averageReturn: avgReturn,
-    };
-  }, [data]);
-
-  const renderInvestmentItem = ({item}: {item: Investment}) => {
-    const onClickItem = () => {
-      navigate.navigate('Detail', {
-        ...item,
-      });
-    };
-
-    return (
-      <Card onPress={onClickItem}>
-        <Layout style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-          <Layout>
-            <Text category="s1">{item.name}</Text>
-            <Text appearance="hint" category="c1">
-              {item.symbol}
-            </Text>
-          </Layout>
-          <Layout style={{alignItems: 'flex-end'}}>
-            <Text category="s1">${item.price.toLocaleString()}</Text>
-            <Layout style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Text
-                category="c1"
-                status={item.daily_change > 0 ? 'success' : 'danger'}>
-                {item.daily_change}
-              </Text>
-            </Layout>
-          </Layout>
-        </Layout>
-      </Card>
-    );
-  };
+const HomeScreen: React.FC = () => {
+  const {user} = useAuth();
 
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <TopNavigation title="Home - Investor" alignment="center" />
-      <Divider />
-      <Layout style={{flex: 1, padding: 16}}>
-        <Layout
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}>
-          <Card style={{flex: 1, marginRight: 8}}>
-            <Text appearance="hint" category="c1">
-              Portfolio Total
-            </Text>
-            <Text category="h6">${totalPortfolio.toLocaleString()}</Text>
-          </Card>
+    <ScrollView style={styles.container}>
+      <View style={styles.welcomeSection}>
+        <Text style={styles.welcomeTitle}>Welcome, {user?.name}</Text>
+        <Text style={styles.welcomeSubtitle}>
+          What would you like to do today?
+        </Text>
+      </View>
 
-          <Card style={{flex: 1, marginLeft: 8}}>
-            <Text appearance="hint" category="c1">
-              Perfomance
-            </Text>
-            <Text category="h6">{averageReturn}%</Text>
-          </Card>
-        </Layout>
+      <View style={styles.quickActions}>
+        <TouchableOpacity style={styles.actionCard}>
+          <Text style={styles.actionText}>View Products</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionCard}>
+          <Text style={styles.actionText}>My Orders</Text>
+        </TouchableOpacity>
+      </View>
 
-        <List
-          data={data}
-          renderItem={renderInvestmentItem}
-          ItemSeparatorComponent={Divider}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Featured Products</Text>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={mockProducts}
+          keyExtractor={item => item.id}
+          renderItem={({item}) => (
+            <View style={styles.productCard}>
+              <View style={styles.productImage} />
+              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.productPrice}>${item.price}</Text>
+            </View>
+          )}
         />
-      </Layout>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
   );
-}
+};
 
 export default HomeScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  headerButton: {
+    padding: 8,
+  },
+
+  welcomeSection: {
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 16,
+  },
+  actionCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  actionText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  section: {
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#1F2937',
+  },
+  productCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 16,
+    width: 160,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  productImage: {
+    backgroundColor: '#E5E7EB',
+    height: 120,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  productPrice: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+});
